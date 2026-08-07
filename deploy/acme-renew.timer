@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily ACME certificate renewal check
+
+[Timer]
+OnCalendar=*-*-* 03:41:00
+RandomizedDelaySec=45m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

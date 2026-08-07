@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dividend-etf-score"
+version = "0.1.0"
+description = "515450 红利低波50ETF 双层实时评分系统"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "PyYAML>=6.0",
+  "rich>=13.0",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+futu = ["futu-api>=10.4.6408"]
+test = ["pytest>=7.4"]
+
+[project.scripts]
+etf-score = "dividend_etf_score.cli:main"
+etf-score-sync = "dividend_etf_score.sync:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

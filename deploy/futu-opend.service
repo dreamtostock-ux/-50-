@@ -1,0 +1,23 @@
+[Unit]
+Description=Futu OpenD command-line gateway
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/futu-opend/FutuOpenD.xml
+
+[Service]
+Type=simple
+User=futuopend
+Group=futuopend
+WorkingDirectory=/opt/futu-opend-cli
+Environment=HOME=/home/futuopend
+ExecStart=/opt/futu-opend-cli/FutuOpenD -cfg_file=/etc/futu-opend/FutuOpenD.xml -console=0 -api_ip=127.0.0.1 -api_port=11111 -simulate_trade=disable -no_monitor=1
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+ReadWritePaths=/home/futuopend /var/log/futu-opend
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+[Unit]
+Description=515450 Futu scoring collector
+After=network-online.target etfscore-web.service futu-opend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=etfscore
+Group=etfscore
+WorkingDirectory=/opt/515450-scoring
+EnvironmentFile=/etc/515450-scoring.env
+ExecStart=/opt/515450-scoring/.venv/bin/python -m dividend_etf_score.sync --site-url http://127.0.0.1:3000 --source futu --interval 30 --cycles 0
+Restart=always
+RestartSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/515450-scoring/data /var/lib/etfscore
+
+[Install]
+WantedBy=multi-user.target

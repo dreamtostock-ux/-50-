@@ -1,0 +1,61 @@
+instrument:
+  code: SH.515450
+  name: 红利低波50ETF
+  benchmarks:
+    csi300: SH.000300
+    dividend: SH.000922
+
+runtime:
+  source: auto                 # auto | futu | mock
+  host: ${FUTU_OPEND_HOST:-127.0.0.1}
+  port: ${FUTU_OPEND_PORT:-11111}
+  interval_seconds: 30
+  daily_bars: 300
+  minute_bars: 240
+  strategic_refresh_time: "15:05"
+  allow_mock_fallback: true
+
+static_data:
+  provider: trusted_composite
+  path: data/static_factors.yaml
+  valuation_proxy: SH.000922   # 精确标普指数估值不可公开查询时，使用中证红利十年估值代理
+  max_age_days: 7
+
+engine:
+  strategic_weight: 0.70
+  tactical_weight: 0.30
+  strategic_factors:
+    dividend_spread: 0.25
+    erp: 0.20
+    pb_percentile: 0.15
+    pe_percentile: 0.10
+    dividend_yield: 0.10
+    daily_rsi: 0.05
+    long_trend: 0.07
+    market_environment: 0.08
+  tactical_factors:
+    rsi: 0.12
+    macd: 0.13
+    kdj: 0.08
+    boll: 0.12
+    vwap_deviation: 0.23
+    intraday_change: 0.10
+    relative_anomaly: 0.14
+    orderbook: 0.08
+
+thresholds:
+  dividend_spread_pct: [1.0, 2.0, 3.0, 4.0]
+  erp_pct: [2.0, 3.5, 5.0, 6.5]
+  dividend_yield_pct: [2.5, 3.5, 4.5, 5.5]
+  oversold_ma20_pct: [-1.0, -2.0, -3.0, -4.0, -5.0]
+  oversold_bonus: [2, 5, 8, 12, 18]
+  oversold_max_bonus: 18
+  heavy_volume_ratio: 1.8
+  vwap_scale_pct: 2.0
+  relative_anomaly_scale_pct: 2.0
+  position_bands:
+    - [85, 90]
+    - [75, 75]
+    - [65, 60]
+    - [50, 45]
+    - [0, 25]

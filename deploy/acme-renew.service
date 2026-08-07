@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew ACME certificates with acme.sh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=NO_ARI=1
+ExecStart=/opt/acme.sh/acme.sh --cron --home /opt/acme.sh --config-home /etc/acme.sh --cert-home /var/lib/acme.sh

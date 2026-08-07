@@ -1,0 +1,21 @@
+# 可信度分层：国债由程序从中债官方页面每日刷新；指数估值字段保留明确的来源日期。
+as_of: "2026-08-06"
+bond_10y_yield_pct: 1.7143
+dividend_yield_pct: 5.20
+earnings_yield_pct: 7.10
+pb_percentile_pct: 28.0
+pe_percentile_pct: 32.0
+market_environment_score: 62.0
+data_quality: 74
+field_as_of:
+  bond_10y_yield_pct: "2026-08-06"
+  dividend_yield_pct: "2026-06-29"
+  earnings_yield_pct: "2026-06-29"
+  pb_percentile_pct: "2026-06-29"
+  pe_percentile_pct: "2026-06-29"
+sources:
+  bond_10y_yield_pct: "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/more?locale=cn_zh"
+  dividend_yield_pct: "https://finance.eastmoney.com/a/202606303787420295.html"
+  index_methodology: "https://www.spglobal.com/spdji/en/indices/dividends-factors/sp-china-a-share-largecap-low-volatility-high-dividend-50-index/"
+  fund_disclosure: "https://www.sse.com.cn/disclosure/fund/announcement/c/new/2024-12-11/515450_20241211_90C1.pdf"
+source_note: "国债为中债官方日终数据；指数股息率与估值字段带独立日期，过期会自动降低可信度。"

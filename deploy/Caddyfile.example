@@ -1,0 +1,36 @@
+dreamtofly.top, www.dreamtofly.top {
+	encode zstd gzip
+	reverse_proxy https://127.0.0.1:9443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
+score.dreamtofly.top {
+	tls /etc/caddy/certs/score.dreamtofly.top/fullchain.pem /etc/caddy/certs/score.dreamtofly.top/key.pem
+	encode zstd gzip
+
+	handle /.well-known/acme-challenge/* {
+		root * /var/www/acme
+		file_server
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
+
+http://score.dreamtofly.top {
+	handle /.well-known/acme-challenge/* {
+		root * /var/www/acme
+		file_server
+	}
+
+	redir https://score.dreamtofly.top{uri} permanent
+}
+
+http://8.137.213.122 {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+}

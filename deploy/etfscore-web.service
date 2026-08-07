@@ -1,0 +1,22 @@
+[Unit]
+Description=515450 scoring web dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=etfscore
+Group=etfscore
+WorkingDirectory=/opt/515450-scoring
+EnvironmentFile=/etc/515450-scoring.env
+ExecStart=/opt/515450-scoring/node_modules/.bin/wrangler dev --config wrangler-vps.jsonc --local --persist-to /var/lib/etfscore/wrangler --ip 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/etfscore/wrangler /var/lib/etfscore
+
+[Install]
+WantedBy=multi-user.target
