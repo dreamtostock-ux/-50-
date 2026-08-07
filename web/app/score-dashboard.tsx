@@ -73,10 +73,10 @@ const INITIAL_SCORE: ScoreRow = {
 };
 
 const scoreMeta = [
-  { key: "comprehensiveScore", label: "综合评分", helper: "配置价值 × 交易时机", accent: "lime" },
-  { key: "buySignal", label: "买入信号", helper: "价值与超跌共振", accent: "green" },
-  { key: "sellSignal", label: "卖出信号", helper: "估值与短线过热", accent: "rose" },
-  { key: "intradayTSignal", label: "日内 T 信号", helper: "VWAP 与相对异常", accent: "amber" },
+  { key: "comprehensiveScore", label: "综合评分", helper: "长期价值 × 市场状态", accent: "lime" },
+  { key: "buySignal", label: "估值吸引力", helper: "价值与偏离状态", accent: "green" },
+  { key: "sellSignal", label: "过热风险", helper: "估值与短线温度", accent: "rose" },
+  { key: "intradayTSignal", label: "日内波动状态", helper: "VWAP 与相对波动", accent: "amber" },
 ] as const;
 
 function scoreLabel(value: number) {
@@ -95,30 +95,30 @@ const DECISION_GUIDES = [
   {
     key: "comprehensiveScore" as const,
     title: "综合评分",
-    note: "决定总体配置态度，不等同于立即买入",
+    note: "综合描述战略与战术层的模型状态，不代表收益预测",
     thresholds: [35, 50, 65, 80],
-    bands: ["0–34｜降低关注，检查风险", "35–49｜谨慎观察", "50–64｜持有或小额分批", "65–79｜按计划提高配置", "80–100｜配置价值强，仍需分批"],
+    bands: ["0–34｜模型评价较弱", "35–49｜模型评价偏弱", "50–64｜模型评价中性", "65–79｜模型评价偏强", "80–100｜模型评价较强"],
   },
   {
     key: "buySignal" as const,
-    title: "买入信号",
-    note: "决定计划资金的使用比例",
+    title: "估值吸引力",
+    note: "描述当前估值、股债利差与价格偏离的合成状态",
     thresholds: [50, 65, 80, 90],
-    bands: ["0–49｜不加仓", "50–64｜使用计划资金 10%–20%", "65–79｜使用 20%–40%", "80–89｜使用 40%–60%，分 2–3 笔", "90–100｜先核验数据，再决定 60%–80%"],
+    bands: ["0–49｜吸引力较低", "50–64｜吸引力中性", "65–79｜吸引力偏高", "80–89｜吸引力较高", "90–100｜吸引力极高，需先核验数据"],
   },
   {
     key: "sellSignal" as const,
-    title: "卖出信号",
-    note: "仅管理机动仓，长期底仓另行判断",
+    title: "过热风险",
+    note: "描述估值、动量与短线偏离所反映的过热程度",
     thresholds: [50, 65, 80, 90],
-    bands: ["0–49｜不因模型主动减仓", "50–64｜观察止盈条件", "65–79｜机动仓减 10%–20%", "80–89｜机动仓减 20%–40%", "90–100｜先核验异常，再分批控制风险"],
+    bands: ["0–49｜过热风险较低", "50–64｜过热风险中性", "65–79｜过热风险偏高", "80–89｜过热风险较高", "90–100｜过热风险极高，需先核验异常"],
   },
   {
     key: "intradayTSignal" as const,
-    title: "日内 T 信号",
-    note: "只用于可用底仓，不增加战略总仓位",
+    title: "日内波动状态",
+    note: "描述 VWAP 偏离、相对波动与盘中动量的活跃程度",
     thresholds: [50, 65, 80, 90],
-    bands: ["0–49｜放弃日内操作", "50–64｜小额试单", "65–79｜使用机动仓 10%–20%", "80–89｜分批高抛低吸", "90–100｜先核验行情与流动性"],
+    bands: ["0–49｜波动状态平缓", "50–64｜波动状态一般", "65–79｜波动状态活跃", "80–89｜波动状态较高", "90–100｜波动状态极高，需核验行情与流动性"],
   },
 ];
 
@@ -179,6 +179,14 @@ export function ScoreDashboard() {
         </button>
       </header>
 
+      <aside className="research-disclaimer" role="note" aria-label="研究用途与数据延迟提示">
+        <div className="disclaimer-mark">!</div>
+        <div>
+          <strong>仅供非商业研究使用 · 数据可能延迟</strong>
+          <p>本页展示的是模型状态，不构成证券投资咨询、个性化建议或收益承诺。本站不收费、不接受打赏、不提供会员提醒或交易导流；行情与估值数据可能延迟、缺失或有误，请以交易所、基金管理人及数据源正式披露为准。</p>
+        </div>
+      </aside>
+
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="eyebrow">S&amp;P CHINA A-SHARE · LOW VOL / HIGH DIVIDEND</p>
@@ -213,8 +221,8 @@ export function ScoreDashboard() {
             </article>;
           })}
           <article className="position-card">
-            <span>模型建议仓位</span><strong>{current.positionPct.toFixed(0)}<small>%</small></strong>
-            <p>保留现金缓冲 · 非自动交易指令</p>
+            <span>模型仓位示例</span><strong>{current.positionPct.toFixed(0)}<small>%</small></strong>
+            <p>仅演示评分映射 · 不构成仓位建议</p>
           </article>
         </div>
       </section>
@@ -252,10 +260,10 @@ export function ScoreDashboard() {
         <article className="tactical-card">
           <div className="card-heading"><span>盘中战术读数</span><b>30% 权重</b></div>
           <div className="metric-tiles">
-            <div><span>VWAP 偏离</span><strong>{Number(current.diagnostics.vwap_deviation_pct).toFixed(2)}%</strong><small>低于均价有利买入</small></div>
-            <div><span>相对异常</span><strong>{Number(current.diagnostics.relative_change_pct).toFixed(2)}%</strong><small>相对基准超跌</small></div>
+            <div><span>VWAP 偏离</span><strong>{Number(current.diagnostics.vwap_deviation_pct).toFixed(2)}%</strong><small>价格相对盘中均价的偏离</small></div>
+            <div><span>相对异常</span><strong>{Number(current.diagnostics.relative_change_pct).toFixed(2)}%</strong><small>相对基准的强弱差异</small></div>
             <div><span>1分钟 RSI14</span><strong>{Number(current.diagnostics.intraday_rsi14 ?? current.diagnostics.rsi14).toFixed(1)}</strong><small>盘中动量，仅用于战术层</small></div>
-            <div><span>超跌奖励</span><strong>+{current.oversoldBonus.toFixed(0)}</strong><small>放量下跌不奖励</small></div>
+            <div><span>超跌调整项</span><strong>+{current.oversoldBonus.toFixed(0)}</strong><small>放量下跌时不计入</small></div>
             <div><span>估算 IOPV</span><strong>{Number(current.diagnostics.iopv ?? current.lastPrice).toFixed(4)}</strong><small>由富途折溢价反推</small></div>
             <div><span>实时折溢价</span><strong>{Number(current.diagnostics.premium_pct ?? 0).toFixed(3)}%</strong><small>负值表示折价</small></div>
             <div><span>ETF 总份额</span><strong>{(Number(current.diagnostics.fund_shares ?? 0) / 1e8).toFixed(2)}亿</strong><small>每日记录用于识别申赎</small></div>
@@ -279,9 +287,9 @@ export function ScoreDashboard() {
 
       <section className="decision-section" aria-labelledby="decision-title">
         <div className="decision-intro">
-          <p className="eyebrow">ACTION GUIDE</p>
-          <h2 id="decision-title">分数对应的操作决策</h2>
-          <p>分数越高，越应优先考虑该分数对应的动作，但必须服从总仓位、单日额度、数据可信度与交易规则。任何信号都不代表一次性满仓或清仓。</p>
+          <p className="eyebrow">SCORE INTERPRETATION</p>
+          <h2 id="decision-title">分数区间状态说明</h2>
+          <p>分数只用于描述模型在对应维度上的相对状态，不是对未来价格或收益的预测，也不对应任何必须采取的交易动作。使用前应先核验来源日期、字段完整度与数据可信度。</p>
         </div>
         <div className="decision-grid">
           {DECISION_GUIDES.map((guide) => {
@@ -301,15 +309,15 @@ export function ScoreDashboard() {
           })}
         </div>
         <div className="decision-rules">
-          <b>执行前四项检查</b>
-          <span>数据可信度建议不低于 80</span>
-          <span>先看对应信号，不只看综合分</span>
-          <span>同一动作分 2–3 笔执行</span>
-          <span>日内 T 仅使用可用底仓并遵守交易规则</span>
+          <b>阅读提示</b>
+          <span>优先查看数据可信度</span>
+          <span>结合各维度，不只看综合分</span>
+          <span>核对数据源与更新时间</span>
+          <span>模型结果可能失真或失效</span>
         </div>
       </section>
 
-      <footer><span>双层评分模型 v0.2</span><p>本页仅用于研究与纪律化决策，不构成任何投资建议。</p><a href="https://www.spglobal.com/spdji/en/indices/dividends-factors/sp-china-a-share-largecap-low-volatility-high-dividend-50-index/" target="_blank" rel="noreferrer">标的指数资料 ↗</a></footer>
+      <footer><span>双层评分模型 v0.3</span><p>非商业研究工具 · 不收费、不接受打赏、不提供会员提醒或交易导流 · 不构成任何投资建议。</p><a href="https://www.spglobal.com/spdji/en/indices/dividends-factors/sp-china-a-share-largecap-low-volatility-high-dividend-50-index/" target="_blank" rel="noreferrer">标的指数资料 ↗</a></footer>
     </main>
   );
 }
