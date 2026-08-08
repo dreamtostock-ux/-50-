@@ -4,6 +4,7 @@ from datetime import date, datetime
 from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from .indicators import enrich
 from .models import MarketSnapshot, ScoreResult, StaticFactors
@@ -201,6 +202,12 @@ class ScoringModel:
                 position = float(pct)
                 break
         data_quality, quality_detail = self._quality(snapshot, static)
+        latest_trading_date = None
+        if not snapshot.daily_bars.empty:
+            trading_dates = pd.to_datetime(snapshot.daily_bars.index, errors="coerce")
+            valid_dates = trading_dates[~pd.isna(trading_dates)]
+            if len(valid_dates):
+                latest_trading_date = valid_dates.max().date().isoformat()
         return ScoreResult(
             timestamp=snapshot.timestamp, code=snapshot.code, source=snapshot.source,
             last_price=round(snapshot.last_price, 4), change_pct=round(snapshot.change_pct, 3),
@@ -222,6 +229,7 @@ class ScoringModel:
                 "field_as_of": static.field_as_of,
                 "sources": static.sources,
                 "market_field_status": snapshot.market_field_status,
+                "latest_trading_date": latest_trading_date,
                 "quality_detail": quality_detail,
             },
         )

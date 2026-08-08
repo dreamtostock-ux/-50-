@@ -78,9 +78,14 @@ def main(argv: list[str] | None = None) -> int:
         while cycles == 0 or count < cycles:
             score = engine.tick()
             payload = score.to_dict()
-            payload["as_of_date"] = score.timestamp.date().isoformat()
-            _post(args.site_url, payload, args.ingest_key, args.sites_token)
-            print(f"{score.timestamp:%Y-%m-%d %H:%M:%S} 已记录：综合 {score.comprehensive_score:.1f} / 可信度 {score.data_quality}")
+            calendar_date = score.timestamp.date().isoformat()
+            latest_trading_date = score.diagnostics.get("latest_trading_date")
+            payload["as_of_date"] = calendar_date
+            if latest_trading_date == calendar_date:
+                _post(args.site_url, payload, args.ingest_key, args.sites_token)
+                print(f"{score.timestamp:%Y-%m-%d %H:%M:%S} 已记录：综合 {score.comprehensive_score:.1f} / 可信度 {score.data_quality}")
+            else:
+                print(f"{score.timestamp:%Y-%m-%d %H:%M:%S} 非交易日或尚未开盘，跳过每日记录（最近交易日 {latest_trading_date or '未知'}）")
             count += 1
             if cycles == 0 or count < cycles:
                 time.sleep(max(0, args.interval))

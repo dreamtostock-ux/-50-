@@ -91,6 +91,15 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00+08:00`));
 }
 
+function isTradingRecord(row: ScoreRow) {
+  const latestTradingDate = row.diagnostics.latest_trading_date;
+  if (typeof latestTradingDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(latestTradingDate)) {
+    return latestTradingDate === row.asOfDate;
+  }
+  const weekday = new Date(`${row.asOfDate}T12:00:00+08:00`).getUTCDay();
+  return weekday !== 0 && weekday !== 6;
+}
+
 const DECISION_GUIDES = [
   {
     key: "comprehensiveScore" as const,
@@ -140,9 +149,10 @@ export function ScoreDashboard() {
       const response = await fetch(`/api/scores?days=${range}`, { cache: "no-store" });
       if (!response.ok) throw new Error("history unavailable");
       const data = (await response.json()) as { scores?: ScoreRow[] };
-      if (data.scores?.length) {
-        setRows(data.scores);
-        setSelectedDate((current) => data.scores?.some((row) => row.asOfDate === current) ? current : data.scores![0].asOfDate);
+      const tradingRows = data.scores?.filter(isTradingRecord) ?? [];
+      if (tradingRows.length) {
+        setRows(tradingRows);
+        setSelectedDate((current) => tradingRows.some((row) => row.asOfDate === current) ? current : tradingRows[0].asOfDate);
         setNotice("");
       }
     } catch {

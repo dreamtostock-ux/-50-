@@ -30,6 +30,7 @@ def test_mock_engine_scores_are_bounded():
     assert "daily_rsi" in result.factors
     assert "iopv" in result.diagnostics
     assert "fund_shares" in result.diagnostics
+    assert result.diagnostics["latest_trading_date"] == source.daily.index.max().date().isoformat()
 
 
 def test_strategic_score_is_cached_intraday():

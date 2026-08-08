@@ -11,6 +11,8 @@ test("contains the finished dashboard and deployable build", async () => {
   ]);
   assert.match(page, /515450 红利低波评分台/);
   assert.match(dashboard, /每日评分记录/);
+  assert.match(dashboard, /latest_trading_date/);
+  assert.match(dashboard, /isTradingRecord/);
   assert.match(dashboard, /数据可信度/);
   assert.match(css, /@media\(max-width:620px\)/);
   assert.doesNotMatch(`${page}${dashboard}`, /codex-preview|Your site is taking shape|react-loading-skeleton/);

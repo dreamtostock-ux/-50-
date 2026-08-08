@@ -36,13 +36,23 @@ function present(row: typeof dailyScores.$inferSelect) {
   };
 }
 
+function isTradingRecord(row: typeof dailyScores.$inferSelect) {
+  const diagnostics = parseJson(row.diagnosticsJson);
+  const latestTradingDate = diagnostics.latest_trading_date;
+  if (typeof latestTradingDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(latestTradingDate)) {
+    return latestTradingDate === row.asOfDate;
+  }
+  const weekday = new Date(`${row.asOfDate}T12:00:00+08:00`).getUTCDay();
+  return weekday !== 0 && weekday !== 6;
+}
+
 export async function GET(request: Request) {
   try {
     await ensureScoreSchema();
     const days = Math.min(365, Math.max(1, Number(new URL(request.url).searchParams.get("days") ?? 30)));
     const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
-    const rows = await getDb().select().from(dailyScores).where(gte(dailyScores.asOfDate, cutoff)).orderBy(desc(dailyScores.asOfDate)).limit(days);
-    return Response.json({ scores: rows.map(present) }, { headers: { "cache-control": "no-store" } });
+    const rows = await getDb().select().from(dailyScores).where(gte(dailyScores.asOfDate, cutoff)).orderBy(desc(dailyScores.asOfDate)).limit(Math.min(365, days + 16));
+    return Response.json({ scores: rows.filter(isTradingRecord).slice(0, days).map(present) }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Unable to read scores" }, { status: 500 });
   }
@@ -58,6 +68,11 @@ export async function POST(request: Request) {
     const recordedAt = String(value(body, "recordedAt", "timestamp") ?? new Date().toISOString());
     const asOfDate = String(value(body, "asOfDate", "as_of_date") ?? recordedAt.slice(0, 10));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) throw new Error("as_of_date must use YYYY-MM-DD");
+    const diagnostics = (body.diagnostics ?? {}) as Record<string, unknown>;
+    const latestTradingDate = diagnostics.latest_trading_date;
+    if (typeof latestTradingDate === "string" && latestTradingDate !== asOfDate) {
+      return Response.json({ skipped: true, reason: "non_trading_day", latestTradingDate }, { status: 202 });
+    }
 
     const payload: typeof dailyScores.$inferInsert = {
       asOfDate, recordedAt,
@@ -72,7 +87,7 @@ export async function POST(request: Request) {
       oversoldBonus: Number(value(body, "oversoldBonus", "oversold_bonus") ?? 0),
       source: String(body.source ?? "unknown"),
       dataQuality: Math.round(boundScore(Number(value(body, "dataQuality", "data_quality") ?? 0), "data_quality")),
-      factorsJson: JSON.stringify(body.factors ?? {}), diagnosticsJson: JSON.stringify(body.diagnostics ?? {}),
+      factorsJson: JSON.stringify(body.factors ?? {}), diagnosticsJson: JSON.stringify(diagnostics),
     };
     await ensureScoreSchema();
     const db = getDb();
