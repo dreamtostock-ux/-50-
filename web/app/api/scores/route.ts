@@ -4,6 +4,7 @@ import { ensureScoreSchema } from "../../../db/ensure";
 import { dailyScores } from "../../../db/schema";
 
 type IncomingScore = Record<string, unknown>;
+const CANONICAL_SCORE_API = "https://score.dreamtofly.top/api/scores";
 
 function value(body: IncomingScore, camel: string, snake: string) {
   return body[camel] ?? body[snake];
@@ -48,6 +49,30 @@ function isTradingRecord(row: typeof dailyScores.$inferSelect) {
 
 export async function GET(request: Request) {
   try {
+    const requestUrl = new URL(request.url);
+    if (requestUrl.hostname.endsWith(".chatgpt.site")) {
+      try {
+        const upstreamUrl = new URL(CANONICAL_SCORE_API);
+        upstreamUrl.search = requestUrl.search;
+        const upstream = await fetch(upstreamUrl, {
+          headers: { accept: "application/json" },
+          cache: "no-store",
+          signal: AbortSignal.timeout(8_000),
+        });
+        if (upstream.ok) {
+          return new Response(upstream.body, {
+            status: upstream.status,
+            headers: {
+              "content-type": upstream.headers.get("content-type") ?? "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-score-data-origin": "score.dreamtofly.top",
+            },
+          });
+        }
+      } catch {
+        // 主站短暂不可用时继续读取备用站自身的历史库。
+      }
+    }
     await ensureScoreSchema();
     const days = Math.min(365, Math.max(1, Number(new URL(request.url).searchParams.get("days") ?? 30)));
     const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
