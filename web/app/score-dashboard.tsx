@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type FactorMap = Record<string, number>;
 type DiagnosticMap = Record<string, unknown>;
-type ScoreRow = {
+export type ScoreRow = {
   asOfDate: string;
   recordedAt: string;
   lastPrice: number;
@@ -136,9 +136,11 @@ function decisionBandIndex(value: number, thresholds: number[]) {
   return index === -1 ? thresholds.length : index;
 }
 
-export function ScoreDashboard() {
-  const [rows, setRows] = useState<ScoreRow[]>([INITIAL_SCORE]);
-  const [selectedDate, setSelectedDate] = useState(INITIAL_SCORE.asOfDate);
+export function ScoreDashboard({ initialRows = [] }: { initialRows?: ScoreRow[] }) {
+  const seededRows = initialRows.filter(isTradingRecord);
+  const initialHistory = seededRows.length ? seededRows : [INITIAL_SCORE];
+  const [rows, setRows] = useState<ScoreRow[]>(initialHistory);
+  const [selectedDate, setSelectedDate] = useState(initialHistory[0].asOfDate);
   const [range, setRange] = useState<7 | 30 | 90>(30);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");

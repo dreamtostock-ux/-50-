@@ -11,6 +11,8 @@ test("contains the finished dashboard and deployable build", async () => {
     access(new URL("../dist/server/index.js", import.meta.url)),
   ]);
   assert.match(page, /515450 红利低波评分台/);
+  assert.match(page, /score\.dreamtofly\.top\/api\/scores\?days=90/);
+  assert.match(page, /initialRows/);
   assert.match(dashboard, /每日评分记录/);
   assert.match(dashboard, /latest_trading_date/);
   assert.match(dashboard, /isTradingRecord/);
