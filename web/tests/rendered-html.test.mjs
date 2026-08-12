@@ -16,6 +16,10 @@ test("contains the finished dashboard and deployable build", async () => {
   assert.match(dashboard, /每日评分记录/);
   assert.match(dashboard, /latest_trading_date/);
   assert.match(dashboard, /isTradingRecord/);
+  assert.match(dashboard, /交易中/);
+  assert.match(dashboard, /午间休市/);
+  assert.match(dashboard, /行情更新延迟/);
+  assert.match(dashboard, /30_000/);
   assert.match(scoresApi, /score\.dreamtofly\.top\/api\/scores/);
   assert.match(scoresApi, /x-score-data-origin/);
   assert.match(dashboard, /数据可信度/);

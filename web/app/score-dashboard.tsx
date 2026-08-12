@@ -100,6 +100,50 @@ function isTradingRecord(row: ScoreRow) {
   return weekday !== 0 && weekday !== 6;
 }
 
+function shanghaiClock(now: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "00";
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    minutes: Number(value("hour")) * 60 + Number(value("minute")),
+  };
+}
+
+function parseRecordedAt(value: string) {
+  const withZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}+08:00`;
+  return new Date(withZone);
+}
+
+function marketState(latest: ScoreRow, now: Date) {
+  const clock = shanghaiClock(now);
+  const latestTradingDate = String(latest.diagnostics.latest_trading_date ?? latest.asOfDate);
+  const isCurrentTradingDay = latestTradingDate === clock.date;
+  const morningOpen = clock.minutes >= 570 && clock.minutes < 690;
+  const afternoonOpen = clock.minutes >= 780 && clock.minutes < 900;
+  const isOpenSession = morningOpen || afternoonOpen;
+  const ageMs = now.getTime() - parseRecordedAt(latest.recordedAt).getTime();
+
+  if (clock.minutes < 570) return { label: isCurrentTradingDay ? "未开盘" : "等待开盘", tone: "paused" };
+  if (isOpenSession) {
+    if (!isCurrentTradingDay || ageMs > 180_000) return { label: "行情更新延迟", tone: "delayed" };
+    return { label: "交易中", tone: "open" };
+  }
+  if (clock.minutes >= 690 && clock.minutes < 780) return { label: isCurrentTradingDay ? "午间休市" : "休市", tone: "paused" };
+  return { label: isCurrentTradingDay ? "交易已收盘" : "休市", tone: "closed" };
+}
+
+function formatRecordedTime(row: ScoreRow) {
+  const recorded = parseRecordedAt(row.recordedAt);
+  if (Number.isNaN(recorded.getTime())) return row.asOfDate;
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).format(recorded);
+}
+
 const DECISION_GUIDES = [
   {
     key: "comprehensiveScore" as const,
@@ -144,9 +188,10 @@ export function ScoreDashboard({ initialRows = [] }: { initialRows?: ScoreRow[] 
   const [range, setRange] = useState<7 | 30 | 90>(30);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
+  const [clock, setClock] = useState(() => new Date());
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const response = await fetch(`/api/scores?days=${range}`, { cache: "no-store" });
       if (!response.ok) throw new Error("history unavailable");
@@ -160,13 +205,22 @@ export function ScoreDashboard({ initialRows = [] }: { initialRows?: ScoreRow[] 
     } catch {
       setNotice("正在显示最近一次本地实测记录；启动采集器后会自动写入每日数据。");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [range]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => {
+      setClock(new Date());
+      void load(true);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
 
   const current = rows.find((row) => row.asOfDate === selectedDate) ?? rows[0] ?? INITIAL_SCORE;
+  const latest = rows[0] ?? current;
+  const session = marketState(latest, clock);
   const quality = (current.diagnostics.quality_detail ?? {}) as Record<string, number>;
   const chronological = useMemo(() => [...rows].reverse(), [rows]);
   const factorRows = [
@@ -185,7 +239,7 @@ export function ScoreDashboard({ initialRows = [] }: { initialRows?: ScoreRow[] 
           <span className="brand-mark">50</span>
           <span><b>红利低波评分台</b><small>SH · 515450</small></span>
         </a>
-        <div className="market-state"><i />交易已收盘 <span>数据截至 {current.asOfDate}</span></div>
+        <div className={`market-state ${session.tone}`}><i />{session.label} <span>数据截至 {formatRecordedTime(latest)}</span></div>
         <button className="refresh-button" onClick={() => void load()} disabled={loading} aria-label="刷新评分">
           {loading ? "同步中" : "刷新数据"}
         </button>
