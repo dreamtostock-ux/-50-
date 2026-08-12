@@ -87,6 +87,22 @@ function scoreLabel(value: number) {
   return "弱";
 }
 
+function strategicHeadline(value: number) {
+  if (value >= 80) return "长期价值评价较强";
+  if (value >= 65) return "长期价值评价偏强";
+  if (value >= 50) return "长期价值评价中性";
+  if (value >= 35) return "长期价值评价偏弱";
+  return "长期价值评价较弱";
+}
+
+function tacticalHeadline(value: number) {
+  if (value >= 80) return "盘中市场状态较强";
+  if (value >= 65) return "盘中市场状态偏强";
+  if (value >= 50) return "盘中市场状态中性";
+  if (value >= 35) return "盘中市场状态偏弱";
+  return "盘中市场状态较弱";
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00+08:00`));
 }
@@ -256,7 +272,7 @@ export function ScoreDashboard({ initialRows = [] }: { initialRows?: ScoreRow[] 
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="eyebrow">S&amp;P CHINA A-SHARE · LOW VOL / HIGH DIVIDEND</p>
-          <h1>价值底盘稳定，<br /><em>交易时机偏中性。</em></h1>
+          <h1>{strategicHeadline(current.strategicScore)}，<br /><em>{tacticalHeadline(current.tacticalScore)}。</em></h1>
           <p className="hero-note">战略分每日收盘更新，战术分随价格变化。所有宏观与估值数据均显示来源日期，过期数据自动降低可信度。</p>
         </div>
         <div className="price-panel">
