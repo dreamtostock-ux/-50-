@@ -2,6 +2,7 @@
 Description=515450 Futu scoring collector
 After=network-online.target etfscore-web.service futu-opend.service
 Wants=network-online.target
+Requires=futu-opend.service
 
 [Service]
 Type=simple
@@ -9,6 +10,8 @@ User=etfscore
 Group=etfscore
 WorkingDirectory=/opt/515450-scoring
 EnvironmentFile=/etc/515450-scoring.env
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/bin/bash -c 'for i in {1..60}; do timeout 1 bash -c "</dev/tcp/127.0.0.1/11111" && exit 0; sleep 2; done; exit 1'
 ExecStart=/opt/515450-scoring/.venv/bin/python -m dividend_etf_score.sync --site-url http://127.0.0.1:3000 --source futu --interval 30 --cycles 0
 Restart=always
 RestartSec=15
